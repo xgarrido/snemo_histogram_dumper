@@ -33,6 +33,10 @@
 #include <iostream>
 #include <string>
 
+// - Bayeux:
+// - datatools
+#include <datatools/logger.h>
+
 struct hpd_driver_params
 {
   hpd_driver_params();
@@ -41,6 +45,21 @@ struct hpd_driver_params
 
   bool        help;
   std::string logging_label;
+};
+
+class hpd_driver {
+public:
+  hpd_driver();
+  ~hpd_driver();
+  bool is_initialized() const;
+  void setup(const hpd_driver_params &);
+  void initialize();
+  void run();
+  void reset();
+private:
+  bool _initialized_;
+  datatools::logger::priority _logging_;
+  hpd_driver_params _params_;
 };
 
 #endif // HPD_DRIVER_H_
