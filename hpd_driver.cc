@@ -64,6 +64,7 @@ void hpd_driver::initialize()
               std::logic_error,
               "Driver is already initialized !");
   _logging_ = datatools::logger::get_priority(_params_.logging_label);
+  _initialized_ = true;
   return;
 }
 
