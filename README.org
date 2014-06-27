@@ -1,0 +1,7 @@
+#+TITLE:  Histogram pool dumper
+#+AUTHOR: Xavier Garrido
+#+EMAIL:  xavier.garrido@lal.in2p3.fr
+
+This =git= repository holds a very simple binary program to dump
+=mygsl::histogram= from =mygsl::histogram_pool= into different output format
+sucha as pure ascii stream or =org-mode= file.
