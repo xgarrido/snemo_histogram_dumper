@@ -28,9 +28,9 @@ struct ui {
   /// Print usage
   static void print_usage(std::ostream &);
 
-  // /// Build options
-  // static void build_opts(boost::program_options::options_description &,
-  //                        dpp_driver_params &);
+  /// Build options
+  static void build_opts(boost::program_options::options_description &,
+                         hpd_driver_params &);
 
   /// Application name
   static const std::string APP_NAME;
