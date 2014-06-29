@@ -37,6 +37,10 @@
 // - datatools
 #include <datatools/logger.h>
 
+namespace mygsl {
+  class histogram_pool;
+}
+
 enum output_type {
   OUTPUT_INVALID = 0,
   OUTPUT_COUT,
@@ -67,7 +71,8 @@ public:
   void run();
   void reset();
 protected:
-  void _dump(const std::string & filename_ = "") const;
+  void _dump(const mygsl::histogram_pool & pool_,
+             const std::string & filename_ = "") const;
 private:
   bool _initialized_;
   datatools::logger::priority _logging_;

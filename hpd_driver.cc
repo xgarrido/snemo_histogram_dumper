@@ -3,6 +3,10 @@
 // Ourselves
 #include <hpd_driver.h>
 
+// Third party
+// - Boost
+#include <boost/foreach.hpp>
+
 // - Bayeux:
 // - datatools
 #include <datatools/exception.h>
@@ -126,13 +130,12 @@ void hpd_driver::run()
   dpp::histogram_service hs;
 
   for (std::vector<std::string>::const_iterator i = _params_.input_files.begin();
-       i != _params_.input_files.end(); ++i)
-    {
-      const std::string & a_file = *i;
-      DT_LOG_TRACE(_logging_, "Processing file '" << a_file << "'");
-      hs.load_from_boost_file(a_file);
-      _dump(a_file);
-    }
+       i != _params_.input_files.end(); ++i) {
+    const std::string & a_file = *i;
+    DT_LOG_TRACE(_logging_, "Processing file '" << a_file << "'");
+    hs.load_from_boost_file(a_file);
+    _dump(hs.get_pool(), a_file);
+  }
 
   if (error_code != EXIT_SUCCESS) {
     DT_LOG_ERROR(_logging_, "Error code : " << error_code);
@@ -141,8 +144,48 @@ void hpd_driver::run()
   return;
 }
 
-void hpd_driver::_dump(const std::string & filename_) const
+void hpd_driver::_dump(const mygsl::histogram_pool & pool_, const std::string & filename_) const
 {
+  if (_output_ == OUTPUT_CLOG)
+    pool_.tree_dump(std::clog);
+  else if (_output_ == OUTPUT_COUT)
+    pool_.tree_dump(std::cout);
+  else if (_output_ == OUTPUT_ORG) {
+    std::vector<std::string> hnames;
+    pool_.names(hnames);
+    std::set<std::string> hgroups;
+    BOOST_FOREACH (const std::string & a_name, hnames) {
+      const std::string & a_group = pool_.get_group(a_name);
+      if (! a_group.empty()) {
+        DT_LOG_DEBUG(_logging_,
+                      "Histogram '" << a_name << "' belongs to '" << a_group << "'");
+        hgroups.insert(a_group);
+      }
+    }
 
+    // Process histogram belonging to same group
+    if (! hgroups.empty()) {
+      BOOST_FOREACH (const std::string & a_group, hgroups) {
+        std::vector<std::string> filtered_names;
+        pool_.names(filtered_names, "group=" + a_group);
+        BOOST_FOREACH (const std::string & a_name, filtered_names) {
+          if (pool_.has_1d(a_name)) {
+          } else if (pool_.has_2d(a_name)) {
+            DT_LOG_WARNING(_logging_, "2D histogram are not currently supported !");
+          } else {
+            DT_THROW_IF(true, std::logic_error,
+                        "Histogram '" << a_name << "' is neither a 1D nor 2D histogram !");
+          }
+        } // end of filtered names
+      } // end of groups
+    }
+
+    // Process ungrouped histograms
+    BOOST_FOREACH (const std::string & a_name, hnames) {
+      if (! pool_.get_group(a_name).empty()) continue;
+      DT_LOG_DEBUG(_logging_, "Processing '" << a_name << "' histogram...");
+    } // end of histogram names
+
+  } // end of ORG support
   return;
 }
