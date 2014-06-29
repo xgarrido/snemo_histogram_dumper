@@ -19,6 +19,7 @@
 // - Bayeux:
 // - datatools
 #include <datatools/logger.h>
+#include <datatools/exception.h>
 
 // This project
 #include <hpd_driver.h>
@@ -66,12 +67,21 @@ int main(int argc_, char ** argv_)
     po::store(parsed, vm);
     po::notify(vm);
 
-    hpd_driver drv;
-    drv.setup(dp);
-    drv.initialize();
-    drv.run();
-    drv.reset();
+    // Fetch general opts :
+    logging = datatools::logger::get_priority(dp.logging_label);
+    DT_THROW_IF(logging == datatools::logger::PRIO_UNDEFINED,
+                std::logic_error,
+                "Invalid logging priority '" << dp.logging_label << "' !");
 
+    if (dp.help) {
+      ui::print_usage(std::cout);
+    } else {
+      hpd_driver drv;
+      drv.setup(dp);
+      drv.initialize();
+      drv.run();
+      drv.reset();
+    }
   }
   catch (std::exception & x) {
     DT_LOG_FATAL(logging, ui::APP_NAME << ": " << x.what ());
@@ -82,6 +92,21 @@ int main(int argc_, char ** argv_)
     error_code = EXIT_FAILURE;
   }
   return error_code;
+}
+
+void ui::print_usage(std::ostream & out_)
+{
+  out_ << APP_NAME << " -- A mygsl::histogram dumper program" << std::endl;
+  out_ << std::endl;
+  out_ << "Usage : " << std::endl;
+  out_ << std::endl;
+  out_ << "  " << APP_NAME << " [OPTIONS] [ARGUMENTS] " << std::endl;
+  out_ << std::endl;
+  boost::program_options::options_description opts("Allowed options");
+  hpd_driver_params dummy;
+  build_opts(opts, dummy);
+  out_ << opts << std::endl;
+  return;
 }
 
 void ui::build_opts(boost::program_options::options_description & opts_,
@@ -95,6 +120,13 @@ void ui::build_opts(boost::program_options::options_description & opts_,
      "produce help message.")
     ("logging-priority,P",
      po::value<std::string>(&params_.logging_label)->default_value ("warning"),
-     "set the logging priority.");
+     "set the logging priority.")
+    ("input-file,i",
+     po::value<std::vector<std::string> > (&params_.input_files),
+     "set an input histogram Boost archive.")
+    ("output-file,o",
+     po::value<std::vector<std::string> > (&params_.output_files),
+     "set the output file (optional).")
+    ;
   return;
 }
