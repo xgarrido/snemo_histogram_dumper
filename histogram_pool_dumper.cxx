@@ -124,9 +124,9 @@ void ui::build_opts(boost::program_options::options_description & opts_,
     ("input-file,i",
      po::value<std::vector<std::string> > (&params_.input_files),
      "set an input histogram Boost archive.")
-    ("output-file,o",
-     po::value<std::vector<std::string> > (&params_.output_files),
-     "set the output file (optional).")
+    ("output-type,t",
+     po::value<std::string>(&params_.output_type_label),
+     "set the output format.")
     ;
   return;
 }

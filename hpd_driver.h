@@ -37,6 +37,14 @@
 // - datatools
 #include <datatools/logger.h>
 
+enum output_type {
+  OUTPUT_INVALID = 0,
+  OUTPUT_COUT,
+  OUTPUT_CLOG,
+  OUTPUT_ORG,
+  OUTPUT_DEFAULT = OUTPUT_COUT
+};
+
 struct hpd_driver_params
 {
   hpd_driver_params();
@@ -45,6 +53,8 @@ struct hpd_driver_params
 
   bool        help;
   std::string logging_label;
+  std::vector<std::string> input_files;
+  std::string output_type_label;
 };
 
 class hpd_driver {
@@ -56,10 +66,13 @@ public:
   void initialize();
   void run();
   void reset();
+protected:
+  void _dump(const std::string & filename_ = "") const;
 private:
   bool _initialized_;
   datatools::logger::priority _logging_;
   hpd_driver_params _params_;
+  output_type _output_;
 };
 
 #endif // HPD_DRIVER_H_
