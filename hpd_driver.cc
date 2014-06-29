@@ -12,6 +12,8 @@
 #include <datatools/exception.h>
 #include <datatools/i_tree_dump.h>
 // - mygsl
+#include <mygsl/histogram_1d.h>
+// - dpp
 #include <dpp/histogram_service.h>
 
 hpd_driver_params::hpd_driver_params()
@@ -170,6 +172,7 @@ void hpd_driver::_dump(const mygsl::histogram_pool & pool_, const std::string & 
         pool_.names(filtered_names, "group=" + a_group);
         BOOST_FOREACH (const std::string & a_name, filtered_names) {
           if (pool_.has_1d(a_name)) {
+
           } else if (pool_.has_2d(a_name)) {
             DT_LOG_WARNING(_logging_, "2D histogram are not currently supported !");
           } else {
@@ -184,6 +187,20 @@ void hpd_driver::_dump(const mygsl::histogram_pool & pool_, const std::string & 
     BOOST_FOREACH (const std::string & a_name, hnames) {
       if (! pool_.get_group(a_name).empty()) continue;
       DT_LOG_DEBUG(_logging_, "Processing '" << a_name << "' histogram...");
+      if (pool_.has_1d(a_name)) {
+        const mygsl::histogram_1d & h = pool_.get_1d(a_name);
+        for (size_t i = 0; i < h.bins(); ++i) {
+          const std::pair<double,double> range = h.get_range(i);
+          const double value = h.get(i);
+          std::clog << '|' << range.first << '|' << range.second << '|' << value << '|' << std::endl;
+        }
+      } else if (pool_.has_2d(a_name)) {
+        DT_LOG_WARNING(_logging_, "2D histogram are not currently supported !");
+      } else {
+        DT_THROW_IF(true, std::logic_error,
+                    "Histogram '" << a_name << "' is neither a 1D nor 2D histogram !");
+      }
+
     } // end of histogram names
 
   } // end of ORG support
