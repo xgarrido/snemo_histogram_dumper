@@ -81,6 +81,8 @@ protected:
   void _dump(const mygsl::histogram_pool & pool_,
              const std::string & filename_ = "") const;
 
+  void _orgtbl_preamble(std::ostream & out_, const std::string & tbnames_, const std::string & column_desc_ = "") const;
+
   void _orgtbl_preamble(std::ostream & out_, const std::string & tbnames_, const std::vector<std::string> & columns_desc_) const;
 
   void _histogram2org(const mygsl::histogram_1d & h1d_,

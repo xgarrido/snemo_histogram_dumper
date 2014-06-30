@@ -133,7 +133,7 @@ void hpd_driver::run()
   DT_THROW_IF(! is_initialized(),
               std::logic_error,
               "Driver is not initialized !");
-  DT_LOG_DEBUG(_logging_, "Entering...");
+  DT_LOG_TRACE(_logging_, "Entering...");
 
   // Declare an histogram service
   dpp::histogram_service hs;
@@ -149,7 +149,7 @@ void hpd_driver::run()
   if (error_code != EXIT_SUCCESS) {
     DT_LOG_ERROR(_logging_, "Error code : " << error_code);
   }
-  DT_LOG_DEBUG(_logging_, "Exiting.");
+  DT_LOG_TRACE(_logging_, "Exiting.");
   return;
 }
 
@@ -177,7 +177,7 @@ void hpd_driver::_dump(const mygsl::histogram_pool & pool_, const std::string & 
     filename.erase(0, filename.find_last_of("/"));
     filename.erase(filename.find_last_of("."), std::string::npos);
     filename += ".org";
-    DT_LOG_NOTICE(_logging_, "Org filename = " << filename);
+    DT_LOG_DEBUG(_logging_, "Org filename = " << filename);
     std::ofstream fout(std::string(_params_.output_directory + filename).c_str());
 
     // Process histogram belonging to same group
@@ -187,6 +187,7 @@ void hpd_driver::_dump(const mygsl::histogram_pool & pool_, const std::string & 
       pool_.names(filtered_names, "group=" + a_group);
       hpd_driver::_orgtbl_preamble(fout, a_group, filtered_names);
       BOOST_FOREACH(const std::string & a_name, filtered_names) {
+        DT_LOG_DEBUG(_logging_, "Processing '" << a_name << "' histogram...");
         if (pool_.has_1d(a_name)) {
           const mygsl::histogram_1d & h = pool_.get_1d(a_name);
           if (a_name == filtered_names[0]) {
@@ -210,6 +211,7 @@ void hpd_driver::_dump(const mygsl::histogram_pool & pool_, const std::string & 
     BOOST_FOREACH(const std::string & a_name, hnames) {
       if (! pool_.get_group(a_name).empty()) continue;
       DT_LOG_DEBUG(_logging_, "Processing '" << a_name << "' histogram...");
+      hpd_driver::_orgtbl_preamble(fout, a_name);
       std::vector<std::string> orgtbl;
       if (pool_.has_1d(a_name)) {
         const mygsl::histogram_1d & h = pool_.get_1d(a_name);
@@ -220,9 +222,19 @@ void hpd_driver::_dump(const mygsl::histogram_pool & pool_, const std::string & 
         DT_THROW_IF(true, std::logic_error,
                     "Histogram '" << a_name << "' is neither a 1D nor 2D histogram !");
       }
+      BOOST_FOREACH(const std::string & a_tbl, orgtbl) {
+        fout << a_tbl << std::endl;
+      }
     } // end of histogram names
-
   } // end of ORG support
+  return;
+}
+
+void hpd_driver::_orgtbl_preamble(std::ostream & out_, const std::string & tblname_, const std::string & column_desc_) const
+{
+  std::vector<std::string> dummy;
+  dummy.push_back(column_desc_);
+  _orgtbl_preamble(out_, tblname_, dummy);
   return;
 }
 
