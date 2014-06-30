@@ -11,8 +11,6 @@
 // - datatools
 #include <datatools/exception.h>
 #include <datatools/i_tree_dump.h>
-// - mygsl
-#include <mygsl/histogram_1d.h>
 // - dpp
 #include <dpp/histogram_service.h>
 
@@ -156,53 +154,83 @@ void hpd_driver::_dump(const mygsl::histogram_pool & pool_, const std::string & 
     std::vector<std::string> hnames;
     pool_.names(hnames);
     std::set<std::string> hgroups;
-    BOOST_FOREACH (const std::string & a_name, hnames) {
+    BOOST_FOREACH(const std::string & a_name, hnames) {
       const std::string & a_group = pool_.get_group(a_name);
       if (! a_group.empty()) {
         DT_LOG_DEBUG(_logging_,
-                      "Histogram '" << a_name << "' belongs to '" << a_group << "'");
+                      "Histogram '" << a_name << "' belongs to '" << a_group << "' group");
         hgroups.insert(a_group);
       }
     }
 
-    // Process histogram belonging to same group
-    if (! hgroups.empty()) {
-      BOOST_FOREACH (const std::string & a_group, hgroups) {
-        std::vector<std::string> filtered_names;
-        pool_.names(filtered_names, "group=" + a_group);
-        BOOST_FOREACH (const std::string & a_name, filtered_names) {
-          if (pool_.has_1d(a_name)) {
+    // Compute org filename
+    std::string filename = filename_;
+    filename.erase(filename.find_last_of("."), std::string::npos);
+    filename += ".org";
 
-          } else if (pool_.has_2d(a_name)) {
-            DT_LOG_WARNING(_logging_, "2D histogram are not currently supported !");
+    DT_LOG_NOTICE(_logging_, "Org filename = " << filename);
+
+    // Process histogram belonging to same group
+    BOOST_FOREACH(const std::string & a_group, hgroups) {
+      std::vector<std::string> lines;
+      std::vector<std::string> filtered_names;
+      pool_.names(filtered_names, "group=" + a_group);
+      BOOST_FOREACH(const std::string & a_name, filtered_names) {
+        if (pool_.has_1d(a_name)) {
+          const mygsl::histogram_1d & h = pool_.get_1d(a_name);
+          if (a_name == filtered_names[0]) {
+            hpd_driver::histogram2org(h, lines);
           } else {
-            DT_THROW_IF(true, std::logic_error,
-                        "Histogram '" << a_name << "' is neither a 1D nor 2D histogram !");
+            hpd_driver::histogram2org(h, lines, true);
           }
-        } // end of filtered names
-      } // end of groups
-    }
+        } else if (pool_.has_2d(a_name)) {
+          DT_LOG_WARNING(_logging_, "2D histogram are not currently supported !");
+        } else {
+          DT_THROW_IF(true, std::logic_error,
+                      "Histogram '" << a_name << "' is neither a 1D nor 2D histogram !");
+        }
+      } // end of filtered names
+      // DT_LOG_DEBUG(_logging_, "Dumping '" << a_group << "' histograms");
+      // BOOST_FOREACH(const std::string & a_line, lines) {
+      //   std::clog << a_line << std::endl;
+      // }
+    } // end of groups
 
     // Process ungrouped histograms
-    BOOST_FOREACH (const std::string & a_name, hnames) {
+    BOOST_FOREACH(const std::string & a_name, hnames) {
       if (! pool_.get_group(a_name).empty()) continue;
       DT_LOG_DEBUG(_logging_, "Processing '" << a_name << "' histogram...");
+      std::vector<std::string> lines;
       if (pool_.has_1d(a_name)) {
         const mygsl::histogram_1d & h = pool_.get_1d(a_name);
-        for (size_t i = 0; i < h.bins(); ++i) {
-          const std::pair<double,double> range = h.get_range(i);
-          const double value = h.get(i);
-          std::clog << '|' << range.first << '|' << range.second << '|' << value << '|' << std::endl;
-        }
+        hpd_driver::histogram2org(h, lines);
       } else if (pool_.has_2d(a_name)) {
         DT_LOG_WARNING(_logging_, "2D histogram are not currently supported !");
       } else {
         DT_THROW_IF(true, std::logic_error,
                     "Histogram '" << a_name << "' is neither a 1D nor 2D histogram !");
       }
-
     } // end of histogram names
 
   } // end of ORG support
+  return;
+}
+
+void hpd_driver::histogram2org(const mygsl::histogram_1d & h1d_, std::vector<std::string> & orgtbl_, const bool skip_ranges_)
+{
+  for (size_t i = 0; i < h1d_.bins(); ++i) {
+    const std::pair<double,double> range = h1d_.get_range(i);
+    const double value = h1d_.get(i);
+
+    if (! skip_ranges_) {
+      std::ostringstream oss;
+      oss << '|' << range.first << '|' << range.second << '|' << value << '|';
+      orgtbl_.push_back(oss.str());
+    } else {
+      std::ostringstream oss;
+      oss << value << '|';
+      orgtbl_.at(i) += oss.str();
+    }
+  }
   return;
 }

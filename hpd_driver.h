@@ -36,6 +36,9 @@
 // - Bayeux:
 // - datatools
 #include <datatools/logger.h>
+// - mygsl
+#include <mygsl/histogram_1d.h>
+#include <mygsl/histogram_2d.h>
 
 namespace mygsl {
   class histogram_pool;
@@ -65,19 +68,31 @@ class hpd_driver {
 public:
   hpd_driver();
   ~hpd_driver();
+
   bool is_initialized() const;
   void setup(const hpd_driver_params &);
   void initialize();
   void run();
   void reset();
+
+  static void histogram2org(const mygsl::histogram_1d & h1d_,
+                            std::vector<std::string> & orgtbl_,
+                            const bool skip_ranges_ = false);
+
+  // static void histogram2org(const mygsl::histogram_2d & h2d_,
+  //                            std::vector<std::string> & orgtbl_,
+  //                            const bool skip_ranges_ = false);
+
 protected:
+
   void _dump(const mygsl::histogram_pool & pool_,
              const std::string & filename_ = "") const;
+
 private:
-  bool _initialized_;
+  bool                        _initialized_;
   datatools::logger::priority _logging_;
-  hpd_driver_params _params_;
-  output_type _output_;
+  hpd_driver_params           _params_;
+  output_type                 _output_;
 };
 
 #endif // HPD_DRIVER_H_
