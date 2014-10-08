@@ -177,8 +177,9 @@ void hpd_driver::_dump(const mygsl::histogram_pool & pool_, const std::string & 
     filename.erase(0, filename.find_last_of("/"));
     filename.erase(filename.find_last_of("."), std::string::npos);
     filename += ".org";
-    DT_LOG_DEBUG(_logging_, "Org filename = " << filename);
-    std::ofstream fout(std::string(_params_.output_directory + filename).c_str());
+    filename.insert(0, _params_.output_directory);
+    DT_LOG_NOTICE(_logging_, "Org filename = " << filename);
+    std::ofstream fout(filename.c_str());
 
     // Process histogram belonging to same group
     BOOST_FOREACH(const std::string & a_group, hgroups) {
@@ -258,7 +259,7 @@ void hpd_driver::_histogram2org(const mygsl::histogram_1d & h1d_, std::vector<st
 
     if (! skip_ranges_) {
       std::ostringstream oss;
-      oss << '|' << range.first << '|' << range.second << '|' << value << '|';
+      oss << "| " << range.first << "| " << range.second << "| " << value << "|";
       orgtbl_.push_back(oss.str());
     } else {
       std::ostringstream oss;
